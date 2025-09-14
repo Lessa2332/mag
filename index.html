@@ -1,124 +1,127 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ AR Logo на маркері ✨</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ AR Ghost на маркері ✨</title>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe-extras/6.1.1/aframe-extras.min.js"></script>
 
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            overflow: hidden;
-        }
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow: hidden;
+        }
 
-        a-scene {
-            width: 100% !important;
-            height: 100% !important;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: transparent;
-        }
+        a-scene {
+            width: 100% !important;
+            height: 100% !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: transparent;
+        }
 
-        /* Стилі для лоадера */
-        .arjs-loader {
-            height: 100%;
-            width: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            font-size: 1.5em;
-            text-align: center;
-        }
+        /* Стилі для лоадера */
+        .arjs-loader {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 1.5em;
+            text-align: center;
+        }
 
- #smartLessaBtn {
-    position: fixed;
-    bottom: 40px; /* Збільшуємо відстань від нижнього краю */
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(45deg, #ff0044, #ff6600);
-    color: white;
-    padding: 14px 24px;
-    border-radius: 30px;
-    font-size: 1.1em;
-    font-weight: bold;
-    text-decoration: none;
-    z-index: 1000;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-    transition: all 0.2s ease;
-}
-#smartLessaBtn:hover {
-    transform: translateX(-50%) scale(1.05);
-}
-
-    </style>
+        #smartLessaBtn {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #ff0044, #ff6600);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            z-index: 1000;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+        #smartLessaBtn:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+    </style>
 </head>
 <body>
-    <div class="arjs-loader">
-        <div>Завантаження AR... <br> 🪄 Наведіть камеру на ваш маркер!</div>
-    </div>
+    <div class="arjs-loader">
+        <div>Завантаження AR... <br> 🪄 Наведіть камеру на ваш маркер!</div>
+    </div>
 
-    <a-scene
-        mindar-image="imageTargetSrc: ./targets.mind;"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-        loading-screen="enabled: false"
-        embedded
-        renderer="colorManagement: true; physicallyCorrectLights: true;"
-    >
-        <a-assets>
-            <img id="logo-img" src="./logo.png" crossorigin="anonymous">
-        </a-assets>
+    <a-scene
+        mindar-image="imageTargetSrc: ./targets.mind;"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        loading-screen="enabled: false"
+        embedded
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+    >
+        <a-assets>
+            <a-asset-item id="ghost-model" src="./ghost.glb" crossorigin="anonymous"></a-asset-item>
+        </a-assets>
 
-        <a-camera
-            look-controls="enabled: false"
-            position="0 0 0"
-        ></a-camera>
+        <a-camera
+            look-controls="enabled: false"
+            position="0 0 0"
+        ></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-image
-                src="#logo-img"
-                position="0 0 0.05" 
-                rotation="45 0 0" /* Тепер зображення лежить паралельно */
-                scale="3 3 3"  
-            ></a-image>
-        </a-entity>
-    </a-scene>
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-entity
+                gltf-model="#ghost-model"
+                position="0 0 0.5"
+                rotation="0 0 0"
+                scale="0 0 0" >
+                <a-animation
+                    attribute="scale"
+                    from="0 0 0"
+                    to="1 1 1"
+                    dur="2000"
+                    easing="ease-out-quad"
+                ></a-animation>
+            </a-entity>
+        </a-entity>
+    </a-scene>
 
-    <a href="https://youtube.com/playlist?list=PL6UDFwT9TzFxsVdFiEBsQ9yFpcYRPOpfO&si=IyXv1SkdPyvhcW7Z"
-     id="smartLessaBtn" target="_blank">👉 Дивись більше на @SmartLessa</a>
+    <a href="https://youtube.com/playlist?list=PL6UDFwT9TzFxsVdFiEBsQ9yFpcYRPOpfO&si=IyXv1SkdPyvhcW7Z"
+      id="smartLessaBtn" target="_blank">👉 Дивись більше на @SmartLessa</a>
 
-    <script>
-        // Вирішуємо проблему з висотою вікна на мобільних пристроях
-        function fixHeight() {
-            document.body.style.height = window.innerHeight + 'px';
-        }
-        fixHeight();
-        window.addEventListener('resize', fixHeight);
+    <script>
+        function fixHeight() {
+            document.body.style.height = window.innerHeight + 'px';
+        }
+        fixHeight();
+        window.addEventListener('resize', fixHeight);
 
-        const scene = document.querySelector('a-scene');
-        scene.addEventListener('mindar-image-started', () => {
-            const loader = document.querySelector('.arjs-loader');
-            if (loader) {
-                loader.style.display = 'none';
-            }
-        });
-    </script>
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('mindar-image-started', () => {
+            const loader = document.querySelector('.arjs-loader');
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
-
-
-
 
