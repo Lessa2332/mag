@@ -6,6 +6,11 @@
     <meta name="description" content="AR-сцена з планетою для дітей">
     <title>🌍«Світ на долоні » 🎈</title>
 
+    <!-- Підключення шрифту -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
@@ -18,6 +23,7 @@
             height: 100%;
             overflow: hidden;
             background: transparent;
+            font-family: 'Comic Neue', cursive, sans-serif;
         }
         
         a-scene {
@@ -46,7 +52,7 @@
             text-align: center;
             padding: 20px;
             box-sizing: border-box;
-            font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Comic Neue', cursive, sans-serif;
         }
 
         @keyframes pulse {
@@ -72,7 +78,7 @@
             border: none;
             border-radius: 15px;
             cursor: pointer;
-            font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Comic Neue', cursive, sans-serif;
             font-size: 1em;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-decoration: none;
@@ -96,6 +102,9 @@
             display: none;
             border: 2px solid #0057B7;
             background: rgba(255, 255, 255, 0.8);
+            max-width: 80%;
+            max-height: 50%;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -105,7 +114,7 @@
         <div style="margin-top: 20px; font-size: 1.2em;">Наведи камеру на маркер! 😊🎨</div>
     </div>
 
-    <canvas id="word-canvas" width="800" height="400"></canvas>
+    <canvas id="word-canvas"></canvas>
 
     <a-scene
         mindar-image="imageTargetSrc: ./my-marker.mind;"
@@ -171,6 +180,15 @@
         fixHeight();
         window.addEventListener('resize', fixHeight);
 
+        // Динамічне налаштування розміру канвасу
+        function adjustCanvasSize() {
+            const canvas = document.getElementById('word-canvas');
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = window.innerHeight * 0.5;
+        }
+        window.addEventListener('resize', adjustCanvasSize);
+        adjustCanvasSize();
+
         // Посилання на елементи
         const loader = document.querySelector('#loader');
         const targetEntity = document.querySelector('[mindar-image-target]');
@@ -183,6 +201,44 @@
         const successSound = document.querySelector('#success-sound');
         const canvas = document.querySelector('#word-canvas');
         const ctx = canvas.getContext('2d');
+
+        // Функція для вимірювання ширини тексту
+        function getTextWidth(text, font) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = font;
+            return context.measureText(text).width + 10; // + невеликий відступ
+        }
+
+        // Фрази з динамічною шириною
+        const phrases = [
+            // Гасло 1: "Мир Україні" (2 слова) + 2 зайвих
+            [
+                { text: 'Україні', width: getTextWidth('Україні', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Мир', width: getTextWidth('Мир', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Річка', width: getTextWidth('Річка', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Гора', width: getTextWidth('Гора', '20px Comic Neue'), height: 30, placed: false }
+            ],
+            // Гасло 2: "Свобода всім" (2 слова) + 2 зайвих
+            [
+                { text: 'всім', width: getTextWidth('всім', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Свобода', width: getTextWidth('Свобода', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Ліс', width: getTextWidth('Ліс', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Море', width: getTextWidth('Море', '20px Comic Neue'), height: 30, placed: false }
+            ],
+            // Гасло 3: "Єдність і мир" (3 слова) + 2 зайвих
+            [
+                { text: 'мир', width: getTextWidth('мир', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'і', width: getTextWidth('і', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Єдність', width: getTextWidth('Єдність', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Дерево', width: getTextWidth('Дерево', '20px Comic Neue'), height: 30, placed: false },
+                { text: 'Сонце', width: getTextWidth('Сонце', '20px Comic Neue'), height: 30, placed: false }
+            ]
+        ];
+
+        let currentPhraseIndex = 0;
+        let words = [];
+        let selectedWord = null;
 
         // Перевірка завантаження текстури
         const earthTexture = document.querySelector('#earth-texture');
@@ -209,7 +265,7 @@
                     soundBtn.classList.remove('off');
                     soundBtn.textContent = 'Вимкнути звук';
                 }
-                playBtn.style.display = 'block'; // Показуємо кнопку "Грати"
+                playBtn.style.display = 'block';
             });
 
             targetEntity.addEventListener('targetLost', () => {
@@ -221,8 +277,8 @@
                 if (peaceDove) peaceDove.setAttribute('visible', 'false');
                 if (bgMusic && !bgMusic.paused) bgMusic.pause();
                 canvas.style.display = 'none';
-                playBtn.style.display = 'none'; // Ховаємо кнопку "Грати"
-                nextBtn.style.display = 'none'; // Ховаємо кнопку "Наступне"
+                playBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
                 loader.style.display = 'flex';
                 loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
                 loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
@@ -244,101 +300,115 @@
             }
         });
 
-        // Логіка гри з перетягуванням слів
-        const phrases = [
-            // Гасло 1: "Мир Україні" (2 слова) + 2 зайвих
-            [
-                { text: 'Україні', width: 80, height: 30, placed: false },
-                { text: 'Мир', width: 50, height: 30, placed: false },
-                { text: 'Річка', width: 60, height: 30, placed: false },
-                { text: 'Гора', width: 50, height: 30, placed: false }
-            ],
-            // Гасло 2: "Свобода всім" (2 слова) + 2 зайвих
-            [
-                { text: 'всім', width: 50, height: 30, placed: false },
-                { text: 'Свобода', width: 80, height: 30, placed: false },
-                { text: 'Ліс', width: 40, height: 30, placed: false },
-                { text: 'Море', width: 60, height: 30, placed: false }
-            ],
-            // Гасло 3: "Єдність і мир" (3 слова) + 2 зайвих
-            [
-                { text: 'мир', width: 50, height: 30, placed: false },
-                { text: 'і', width: 20, height: 30, placed: false },
-                { text: 'Єдність', width: 70, height: 30, placed: false },
-                { text: 'Дерево', width: 70, height: 30, placed: false },
-                { text: 'Сонце', width: 60, height: 30, placed: false }
-            ]
-        ];
-        let currentPhraseIndex = 0;
-        let words = [];
-        let selectedWord = null;
-
+        // Генерація випадкової позиції
         function getRandomPosition(maxX, maxY) {
             return {
-                x: Math.random() * (maxX - 150) + 20,
+                x: Math.random() * (maxX - 200) + 100,
                 y: Math.random() * (maxY / 2 - 50) + 30
             };
         }
 
+        // Завантаження фрази
         function loadPhrase(index) {
             const phrase = phrases[index];
             let targetX = 20;
-            words = phrase.map(word => {
+            words = phrase.map((word, i) => {
                 const pos = getRandomPosition(canvas.width, canvas.height);
-                const target = { targetX: word.placed ? targetX : pos.x, targetY: canvas.height - 50 };
-                if (phrase.indexOf(word) < phrase.length - 2) { // Останні два слова - зайві, не мають цільових позицій
-                    targetX += word.width + 20; // Більша відстань між цільовими позиціями
+                const isTargetWord = i < phrase.length - 2;
+                const target = {
+                    targetX: isTargetWord ? targetX : null,
+                    targetY: isTargetWord ? canvas.height - 50 : null
+                };
+                if (isTargetWord) {
+                    targetX += word.width + 20;
                 }
-                return { ...word, x: pos.x, y: pos.y, targetX: target.targetX, targetY: target.targetY };
+                return {
+                    ...word,
+                    x: pos.x,
+                    y: pos.y,
+                    targetX: target.targetX,
+                    targetY: target.targetY,
+                    isTargetWord: isTargetWord
+                };
             });
-            // Перемішуємо слова для розкидання не за порядком
             words.sort(() => Math.random() - 0.5);
             drawWords();
         }
 
+        // Малювання слів на canvas
         function drawWords() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = '20px Comic Neue';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
             words.forEach(word => {
                 ctx.fillStyle = word.placed ? '#0057B7' : '#FF4500';
                 ctx.fillText(word.text, word.x, word.y);
-                if (!word.placed && words.indexOf(word) < words.length - 2) { // Тільки для основних слів малюємо цільові зони
+
+                if (word.isTargetWord && !word.placed) {
                     ctx.strokeStyle = '#FFD700';
-                    ctx.strokeRect(word.targetX, word.targetY - 20, word.width, word.height);
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(word.targetX, word.targetY, word.width, word.height);
                 }
             });
-            if (words.every(word => word.placed || words.indexOf(word) >= words.length - 2)) {
-                const fullPhrase = words.slice(0, -2).map(word => word.text).join(' ');
+
+            // Перевірка завершення рівня
+            const targetWords = words.filter(w => w.isTargetWord);
+            const allPlaced = targetWords.every(w => w.placed);
+
+            if (allPlaced) {
+                const sortedWords = targetWords.sort((a, b) => a.targetX - b.targetX);
+                const fullPhrase = sortedWords.map(w => w.text).join(' ');
+                ctx.textAlign = 'center';
                 ctx.fillStyle = '#0057B7';
-                ctx.fillText(fullPhrase + ' 💙💛', canvas.width / 2 - 180, canvas.height / 2);
+                ctx.fillText(fullPhrase + ' 💙💛', canvas.width / 2, canvas.height / 2 - 20);
+
                 if (successSound) successSound.play();
                 if (peaceDove) peaceDove.setAttribute('visible', 'true');
                 if (currentPhraseIndex < phrases.length - 1) {
                     nextBtn.style.display = 'block';
                 } else {
-                    ctx.fillText('Гра завершена! 😊', canvas.width / 2 - 100, canvas.height / 2 + 30);
+                    ctx.fillText('Гра завершена! 😊', canvas.width / 2, canvas.height / 2 + 30);
                 }
             }
         }
 
+        // Початок гри
         function startWordGame() {
+            // Очищення попередніх слухачів
+            canvas.removeEventListener('mousedown', handleMouseDown);
+            canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('mouseup', handleMouseUp);
+            canvas.removeEventListener('touchstart', handleTouchStart);
+            canvas.removeEventListener('touchmove', handleTouchMove);
+            canvas.removeEventListener('touchend', handleMouseUp);
+
             currentPhraseIndex = 0;
             loadPhrase(currentPhraseIndex);
             canvas.style.display = 'block';
+
             canvas.addEventListener('mousedown', handleMouseDown);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('mouseup', handleMouseUp);
             canvas.addEventListener('touchstart', handleTouchStart);
-            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvas.addEventListener('touchend', handleMouseUp);
         }
 
-        function handleMouseDown(e) {
+        // Обробка подій миші та тачу
+        function getCanvasCoords(e, isTouch = false) {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = isTouch ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+            const y = isTouch ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+            return { x, y };
+        }
+
+        function handleMouseDown(e) {
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
             words.forEach(word => {
-                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y && y < word.y + word.height) {
                     selectedWord = word;
                 }
             });
@@ -346,11 +416,9 @@
 
         function handleTouchStart(e) {
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const x = e.touches[0].clientX - rect.left;
-            const y = e.touches[0].clientY - rect.top;
+            const { x, y } = getCanvasCoords(e, true);
             words.forEach(word => {
-                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y && y < word.y + word.height) {
                     selectedWord = word;
                 }
             });
@@ -358,11 +426,9 @@
 
         function handleMouseMove(e) {
             if (selectedWord) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                selectedWord.x = x - selectedWord.width / 2;
-                selectedWord.y = y;
+                const { x, y } = getCanvasCoords(e);
+                selectedWord.x = Math.max(10, Math.min(x - selectedWord.width / 2, canvas.width - selectedWord.width - 10));
+                selectedWord.y = Math.max(20, Math.min(y, canvas.height - 20));
                 drawWords();
             }
         }
@@ -370,24 +436,28 @@
         function handleTouchMove(e) {
             e.preventDefault();
             if (selectedWord) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.touches[0].clientX - rect.left;
-                const y = e.touches[0].clientY - rect.top;
-                selectedWord.x = x - selectedWord.width / 2;
-                selectedWord.y = y;
+                const { x, y } = getCanvasCoords(e, true);
+                selectedWord.x = Math.max(10, Math.min(x - selectedWord.width / 2, canvas.width - selectedWord.width - 10));
+                selectedWord.y = Math.max(20, Math.min(y, canvas.height - 20));
                 drawWords();
             }
         }
 
         function handleMouseUp() {
             if (selectedWord) {
-                const dx = selectedWord.x - selectedWord.targetX;
-                const dy = selectedWord.y - selectedWord.targetY;
-                if (selectedWord.targetX && Math.abs(dx) < 20 && Math.abs(dy) < 20) { // Перетягування тільки для слів із цільовими позиціями
-                    selectedWord.x = selectedWord.targetX;
-                    selectedWord.y = selectedWord.targetY;
-                    selectedWord.placed = true;
-                } else if (!selectedWord.targetX) { // Зайві слова повертаються на випадкову позицію
+                if (selectedWord.isTargetWord && selectedWord.targetX !== null) {
+                    const dx = selectedWord.x - selectedWord.targetX;
+                    const dy = selectedWord.y - selectedWord.targetY;
+                    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+                        selectedWord.x = selectedWord.targetX;
+                        selectedWord.y = selectedWord.targetY;
+                        selectedWord.placed = true;
+                    } else {
+                        const pos = getRandomPosition(canvas.width, canvas.height);
+                        selectedWord.x = pos.x;
+                        selectedWord.y = pos.y;
+                    }
+                } else {
                     const pos = getRandomPosition(canvas.width, canvas.height);
                     selectedWord.x = pos.x;
                     selectedWord.y = pos.y;
@@ -397,17 +467,18 @@
             }
         }
 
-        // Обробка кнопки "Грати"
+        // Обробка кнопок
         playBtn.addEventListener('click', () => {
             startWordGame();
         });
 
-        // Обробка кнопки "Наступне"
         nextBtn.addEventListener('click', () => {
             currentPhraseIndex++;
-            loadPhrase(currentPhraseIndex);
-            nextBtn.style.display = 'none';
-            if (peaceDove) peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба для наступного завдання
+            if (currentPhraseIndex < phrases.length) {
+                loadPhrase(currentPhraseIndex);
+                nextBtn.style.display = 'none';
+                if (peaceDove) peaceDove.setAttribute('visible', 'false');
+            }
         });
 
         // Компонент для обробки сенсорних жестів
@@ -429,15 +500,11 @@
                     return;
                 }
 
-                console.log('Компонент touch-gestures ініціалізовано');
-
                 this.el.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    console.log('touchstart triggered, touches:', e.touches.length);
                     if (e.touches.length === 1) {
                         this.isRotating = true;
                         this.startPos.x = e.touches[0].pageX;
-                        console.log('Початок обертання, позиція:', this.startPos);
                     } else if (e.touches.length === 2) {
                         this.isPinching = true;
                         this.isRotating = false;
@@ -446,13 +513,11 @@
                             e.touches[0].pageY - e.touches[1].pageY
                         );
                         this.currentScale = this.planet.object3D.scale.x;
-                        console.log('Початок масштабування, відстань:', this.initialDistance);
                     }
                 });
 
                 this.el.addEventListener('touchmove', (e) => {
                     e.preventDefault();
-                    console.log('touchmove triggered, touches:', e.touches.length);
                     if (this.isPinching && e.touches.length === 2) {
                         const currentDistance = Math.hypot(
                             e.touches[0].pageX - e.touches[1].pageX,
@@ -461,17 +526,14 @@
                         const scaleFactor = currentDistance / this.initialDistance;
                         const newScale = Math.max(this.data.minScale, Math.min(this.data.maxScale, this.currentScale * scaleFactor));
                         this.planet.object3D.scale.set(newScale, newScale, newScale);
-                        console.log('Масштабування, новий масштаб:', newScale);
                     } else if (this.isRotating && e.touches.length === 1) {
                         const deltaX = (e.touches[0].pageX - this.startPos.x) * this.data.rotationSpeed;
                         this.planet.object3D.rotation.y += THREE.MathUtils.degToRad(deltaX);
                         this.startPos.x = e.touches[0].pageX;
-                        console.log('Обертання, deltaX:', deltaX);
                     }
                 });
 
                 this.el.addEventListener('touchend', () => {
-                    console.log('touchend triggered');
                     this.isRotating = false;
                     this.isPinching = false;
                 });
