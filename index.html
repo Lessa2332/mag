@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ AR Ghost на маркері ✨</title>
+    <meta name="description" content="AR-сцена з планетою для дітей">
+    <title>🌍«Світ на долоні » 🎈</title>
 
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe-extras/6.1.1/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
 
     <style>
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
+            height: 100%;
             overflow: hidden;
+            background: transparent;
         }
-
+        
         a-scene {
             width: 100% !important;
             height: 100% !important;
@@ -26,103 +29,392 @@
             background: transparent;
         }
 
-        /* Стилі для лоадера */
         .arjs-loader {
             height: 100%;
             width: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            background-color: rgba(0, 0, 0, 0.8);
+            background: rgba(135, 206, 235, 0.2);
             z-index: 9999;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: white;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            font-size: 1.5em;
+            color: #FF4500;
+            font-size: 1.8em;
             text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
         }
 
-        #smartLessaBtn {
-            position: fixed;
-            bottom: 40px;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse { animation: pulse 1.5s infinite; }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(45deg, #ff0044, #ff6600);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 30px;
-            font-size: 1.1em;
-            font-weight: bold;
-            text-decoration: none;
-            z-index: 1000;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-            transition: all 0.2s ease;
+            z-index: 10000;
+            display: flex;
+            gap: 10px;
         }
-        #smartLessaBtn:hover {
-            transform: translateX(-50%) scale(1.05);
+
+        .sound-btn, .youtube-btn, .play-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+            font-size: 1em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        .sound-btn { background-color: #4CAF50; color: white; }
+        .sound-btn.off { background-color: #f44336; }
+        .youtube-btn { background-color: #FF9800; color: white; }
+        .youtube-btn:hover { background-color: #FFB300; }
+        .play-btn { background-color: #0057B7; color: white; }
+        .play-btn:hover { background-color: #003087; }
+
+        #word-canvas {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10001;
+            display: none;
+            border: 2px solid #0057B7;
+            background: rgba(255, 255, 255, 0.8);
         }
     </style>
 </head>
 <body>
-    <div class="arjs-loader">
-        <div>Завантаження AR... <br> 🪄 Наведіть камеру на ваш маркер!</div>
+    <div class="arjs-loader" id="loader">
+        <div class="pulse">🌍 Світ на долоні 🎈</div>
+        <div style="margin-top: 20px; font-size: 1.2em;">Наведи камеру на маркер! 😊🎨</div>
     </div>
 
+    <canvas id="word-canvas" width="400" height="200"></canvas>
+
     <a-scene
-        mindar-image="imageTargetSrc: ./targets.mind;"
+        mindar-image="imageTargetSrc: ./my-marker.mind;"
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
         loading-screen="enabled: false"
         embedded
         renderer="colorManagement: true; physicallyCorrectLights: true;"
+        touch-gestures
     >
         <a-assets>
-           <a-asset-item id="ghost-model" src="https://cdn.glitch.com/b4959325-a83a-4468-bb96-6d6507611a51%2FAvocado.glb?v=1602798836248" crossorigin="anonymous"></a-asset-item>
+            <audio id="bg-music" src="./bg-music.mp3" preload="auto" loop></audio>
+            <audio id="success-sound" src="./success.mp3" preload="auto"></audio>
+            <img id="earth-texture" src="./earth.jpg">
+            <img id="peace-dove" src="./peace-dove.png">
         </a-assets>
 
         <a-camera
+            id="camera"
+            position="0 0 1.5"
             look-controls="enabled: false"
-            position="0 0 0"
         ></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <a-entity
-                gltf-model="#ghost-model"
-                position="0 0 0.5"
-                rotation="0 0 0"
-                scale="0 0 0" >
+            <a-sphere
+                id="hand-planet"
+                position="0 0 -0.5"
+                radius="0.4"
+                src="#earth-texture"
+                visible="false"
+                material="opacity: 1; transparent: false"
+            >
                 <a-animation
-                    attribute="scale"
-                    from="0 0 0"
-                    to="1 1 1"
-                    dur="2000"
-                    easing="ease-out-quad"
+                    attribute="rotation"
+                    to="0 360 0"
+                    dur="5000"
+                    repeat="indefinite"
                 ></a-animation>
-            </a-entity>
+            </a-sphere>
+            <a-image
+                id="peace-dove"
+                src="#peace-dove"
+                position="0 0.5 -0.5"
+                scale="0.2 0.2 0.2"
+                visible="false"
+                animation="property: position; to: 0 0.7 -0.5; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
+            ></a-image>
         </a-entity>
     </a-scene>
 
-    <a href="https://youtube.com/playlist?list=PL6UDFwT9TzFxsVdFiEBsQ9yFpcYRPOpfO&si=IyXv1SkdPyvhcW7Z"
-      id="smartLessaBtn" target="_blank">👉 Дивись більше на @SmartLessa</a>
+    <div class="controls">
+        <button id="sound-btn" class="sound-btn">Увімкнути звук</button>
+        <button id="play-btn" class="play-btn">Грати</button>
+        <a href="https://www.youtube.com/playlist?list=PL6UDFwT9TzFw5K8Tzu_OgsDz7vV3N9eY-" target="_blank" class="youtube-btn">YouTube SmartLessa</a>
+    </div>
 
     <script>
-        function fixHeight() {
-            document.body.style.height = window.innerHeight + 'px';
+        // Адаптивність для повного екрану
+        function fixHeight() { 
+            document.body.style.height = window.innerHeight + 'px'; 
         }
         fixHeight();
         window.addEventListener('resize', fixHeight);
 
-        const scene = document.querySelector('a-scene');
-        scene.addEventListener('mindar-image-started', () => {
-            const loader = document.querySelector('.arjs-loader');
-            if (loader) {
+        // Посилання на елементи
+        const loader = document.querySelector('#loader');
+        const targetEntity = document.querySelector('[mindar-image-target]');
+        const planet = document.querySelector('#hand-planet');
+        const bgMusic = document.querySelector('#bg-music');
+        const soundBtn = document.querySelector('#sound-btn');
+        const playBtn = document.querySelector('#play-btn');
+        const peaceDove = document.querySelector('#peace-dove');
+        const successSound = document.querySelector('#success-sound');
+        const canvas = document.querySelector('#word-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Перевірка завантаження текстури
+        const earthTexture = document.querySelector('#earth-texture');
+        if (earthTexture) {
+            earthTexture.addEventListener('load', () => {
+                console.log('Текстура earth.jpg успішно завантажена');
+            });
+            earthTexture.addEventListener('error', () => {
+                console.error('Помилка завантаження текстури earth.jpg');
+            });
+        }
+
+        // Логіка відстеження маркера
+        if (targetEntity) {
+            targetEntity.addEventListener('targetFound', () => {
+                console.log("🎯 Маркер знайдено! Планета з'явилася.");
                 loader.style.display = 'none';
+                if (planet) {
+                    planet.setAttribute('visible', 'true');
+                    planet.components.animation.pause();
+                }
+                if (bgMusic && bgMusic.paused) {
+                    bgMusic.play().catch(e => console.log("🔇 Помилка відтворення музики:", e));
+                    soundBtn.classList.remove('off');
+                    soundBtn.textContent = 'Вимкнути звук';
+                }
+                playBtn.style.display = 'block'; // Показуємо кнопку "Грати"
+            });
+
+            targetEntity.addEventListener('targetLost', () => {
+                console.log("ℹ️ Маркер втрачено.");
+                if (planet) {
+                    planet.setAttribute('visible', 'false');
+                    planet.components.animation.play();
+                }
+                if (peaceDove) peaceDove.setAttribute('visible', 'false');
+                if (bgMusic && !bgMusic.paused) bgMusic.pause();
+                canvas.style.display = 'none';
+                playBtn.style.display = 'none'; // Ховаємо кнопку "Грати"
+                loader.style.display = 'flex';
+                loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
+                loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
+            });
+        } else {
+            console.error('Елемент mindar-image-target не знайдено!');
+        }
+
+        // Обробка кнопки звуку
+        soundBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.play().catch(e => console.log("🔇 Помилка відтворення музики:", e));
+                soundBtn.classList.remove('off');
+                soundBtn.textContent = 'Вимкнути звук';
+            } else {
+                bgMusic.pause();
+                soundBtn.classList.add('off');
+                soundBtn.textContent = 'Увімкнути звук';
+            }
+        });
+
+        // Логіка гри з перетягуванням слів
+        const words = [
+            { text: 'Україна', x: 20, y: 30, targetX: 20, targetY: 120, width: 80, height: 30, placed: false },
+            { text: 'прагне', x: 110, y: 30, targetX: 100, targetY: 120, width: 60, height: 30, placed: false },
+            { text: 'миру', x: 180, y: 30, targetX: 160, targetY: 120, width: 50, height: 30, placed: false },
+            { text: 'та', x: 240, y: 30, targetX: 210, targetY: 120, width: 30, height: 30, placed: false },
+            { text: 'свободи', x: 20, y: 70, targetX: 240, targetY: 120, width: 80, height: 30, placed: false },
+            { text: 'для', x: 110, y: 70, targetX: 320, targetY: 120, width: 40, height: 30, placed: false },
+            { text: 'всіх', x: 160, y: 70, targetX: 360, targetY: 120, width: 40, height: 30, placed: false }
+        ];
+        let selectedWord = null;
+
+        function drawWords() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '20px Comic Neue';
+            words.forEach(word => {
+                ctx.fillStyle = word.placed ? '#0057B7' : '#FF4500';
+                ctx.fillText(word.text, word.x, word.y);
+                if (!word.placed) {
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.strokeRect(word.targetX, word.targetY - 20, word.width, word.height);
+                }
+            });
+            if (words.every(word => word.placed)) {
+                ctx.fillStyle = '#0057B7';
+                ctx.fillText('Україна прагне миру та свободи! 💙💛', canvas.width / 2 - 180, canvas.height / 2);
+                if (successSound) successSound.play();
+                if (peaceDove) peaceDove.setAttribute('visible', 'true');
+            }
+        }
+
+        function startWordGame() {
+            words.forEach(word => word.placed = false); // Скидаємо стан гри
+            canvas.style.display = 'block';
+            drawWords();
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', handleMouseUp);
+        }
+
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            words.forEach(word => {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                    selectedWord = word;
+                }
+            });
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            words.forEach(word => {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                    selectedWord = word;
+                }
+            });
+        }
+
+        function handleMouseMove(e) {
+            if (selectedWord) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                selectedWord.x = x - selectedWord.width / 2;
+                selectedWord.y = y;
+                drawWords();
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (selectedWord) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                const y = e.touches[0].clientY - rect.top;
+                selectedWord.x = x - selectedWord.width / 2;
+                selectedWord.y = y;
+                drawWords();
+            }
+        }
+
+        function handleMouseUp() {
+            if (selectedWord) {
+                const dx = selectedWord.x - selectedWord.targetX;
+                const dy = selectedWord.y - selectedWord.targetY;
+                if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+                    selectedWord.x = selectedWord.targetX;
+                    selectedWord.y = selectedWord.targetY;
+                    selectedWord.placed = true;
+                }
+                selectedWord = null;
+                drawWords();
+            }
+        }
+
+        // Обробка кнопки "Грати"
+        playBtn.addEventListener('click', () => {
+            startWordGame();
+        });
+
+        // Компонент для обробки сенсорних жестів
+        AFRAME.registerComponent('touch-gestures', {
+            schema: {
+                minScale: { type: 'number', default: 0.2 },
+                maxScale: { type: 'number', default: 3.0 },
+                rotationSpeed: { type: 'number', default: 2.0 }
+            },
+            init: function () {
+                this.isRotating = false;
+                this.isPinching = false;
+                this.startPos = { x: 0, y: 0 };
+                this.currentScale = 1;
+                this.planet = document.querySelector('#hand-planet');
+
+                if (!this.planet) {
+                    console.error('Планета не знайдена в компоненті touch-gestures');
+                    return;
+                }
+
+                console.log('Компонент touch-gestures ініціалізовано');
+
+                this.el.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    console.log('touchstart triggered, touches:', e.touches.length);
+                    if (e.touches.length === 1) {
+                        this.isRotating = true;
+                        this.startPos.x = e.touches[0].pageX;
+                        console.log('Початок обертання, позиція:', this.startPos);
+                    } else if (e.touches.length === 2) {
+                        this.isPinching = true;
+                        this.isRotating = false;
+                        this.initialDistance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        this.currentScale = this.planet.object3D.scale.x;
+                        console.log('Початок масштабування, відстань:', this.initialDistance);
+                    }
+                });
+
+                this.el.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    console.log('touchmove triggered, touches:', e.touches.length);
+                    if (this.isPinching && e.touches.length === 2) {
+                        const currentDistance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        const scaleFactor = currentDistance / this.initialDistance;
+                        const newScale = Math.max(this.data.minScale, Math.min(this.data.maxScale, this.currentScale * scaleFactor));
+                        this.planet.object3D.scale.set(newScale, newScale, newScale);
+                        console.log('Масштабування, новий масштаб:', newScale);
+                    } else if (this.isRotating && e.touches.length === 1) {
+                        const deltaX = (e.touches[0].pageX - this.startPos.x) * this.data.rotationSpeed;
+                        this.planet.object3D.rotation.y += THREE.MathUtils.degToRad(deltaX);
+                        this.startPos.x = e.touches[0].pageX;
+                        console.log('Обертання, deltaX:', deltaX);
+                    }
+                });
+
+                this.el.addEventListener('touchend', () => {
+                    console.log('touchend triggered');
+                    this.isRotating = false;
+                    this.isPinching = false;
+                });
             }
         });
     </script>
 </body>
 </html>
-
 
