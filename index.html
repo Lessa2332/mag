@@ -72,9 +72,11 @@
             z-index: 10000;
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        .sound-btn, .youtube-btn, .play-btn, .next-btn, .restart-btn {
+        .sound-btn, .youtube-btn, .play-btn, .next-btn, .exit-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 15px;
@@ -90,10 +92,12 @@
         .sound-btn.off { background-color: #f44336; }
         .youtube-btn { background-color: #FF9800; color: white; }
         .youtube-btn:hover { background-color: #FFB300; }
-        .play-btn, .restart-btn { background-color: #0057B7; color: white; }
-        .play-btn:hover, .restart-btn:hover { background-color: #003087; }
+        .play-btn { background-color: #0057B7; color: white; }
+        .play-btn:hover { background-color: #003087; }
         .next-btn { background-color: #FFD700; color: #0057B7; display: none; }
         .next-btn:hover { background-color: #FFC300; }
+        .exit-btn { background-color: #ff3333; color: white; display: none; }
+        .exit-btn:hover { background-color: #cc0000; }
 
         #word-canvas {
             position: absolute;
@@ -149,6 +153,14 @@
                 visible="false"
                 material="opacity: 1; transparent: false"
             >
+                <a-image
+                    id="peace-dove-entity"
+                    src="#peace-dove-img"
+                    position="0 0.5 0.5"
+                    scale="0.3 0.3 0.3"
+                    visible="false"
+                    animation="property: rotation; to: 0 360 0; dur: 4000; easing: linear; loop: true"
+                ></a-image>
                 <a-animation
                     attribute="rotation"
                     to="0 360 0"
@@ -156,14 +168,6 @@
                     repeat="indefinite"
                 ></a-animation>
             </a-sphere>
-            <a-image
-                id="peace-dove-entity"
-                src="#peace-dove-img"
-                position="0 0.3 -0.3"
-                scale="0.3 0.3 0.3"
-                visible="false"
-                animation="property: position; to: 0 0.5 -0.3; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
-            ></a-image>
         </a-entity>
     </a-scene>
 
@@ -171,19 +175,17 @@
         <button id="sound-btn" class="sound-btn">Увімкнути звук</button>
         <button id="play-btn" class="play-btn">Грати</button>
         <button id="next-btn" class="next-btn">Наступне</button>
-        <button id="restart-btn" class="restart-btn" style="display: none;">Почати знову</button>
+        <button id="exit-btn" class="exit-btn">Вийти з гри</button>
         <a href="https://www.youtube.com/playlist?list=PL6UDFwT9TzFw5K8Tzu_OgsDz7vV3N9eY-" target="_blank" class="youtube-btn">YouTube SmartLessa</a>
     </div>
 
     <script>
-        // Адаптивність для повного екрану
         function fixHeight() {
             document.body.style.height = window.innerHeight + 'px';
         }
         fixHeight();
         window.addEventListener('resize', fixHeight);
 
-        // Динамічне налаштування розміру канвасу
         function adjustCanvasSize() {
             const canvas = document.getElementById('word-canvas');
             canvas.width = window.innerWidth * 0.8;
@@ -192,7 +194,6 @@
         window.addEventListener('resize', adjustCanvasSize);
         adjustCanvasSize();
 
-        // Посилання на елементи
         const loader = document.querySelector('#loader');
         const targetEntity = document.querySelector('[mindar-image-target]');
         const planet = document.querySelector('#hand-planet');
@@ -200,34 +201,24 @@
         const soundBtn = document.querySelector('#sound-btn');
         const playBtn = document.querySelector('#play-btn');
         const nextBtn = document.querySelector('#next-btn');
-        const restartBtn = document.querySelector('#restart-btn');
+        const exitBtn = document.querySelector('#exit-btn');
         const peaceDove = document.querySelector('#peace-dove-entity');
         const successSound = document.querySelector('#success-sound');
         const canvas = document.querySelector('#word-canvas');
         const ctx = canvas.getContext('2d');
+        const arScene = document.querySelector('a-scene');
 
-        // Перевірка завантаження текстур
         const earthTexture = document.querySelector('#earth-texture');
         if (earthTexture) {
-            earthTexture.addEventListener('load', () => {
-                console.log('✅ Текстура earth.jpg успішно завантажена');
-            });
-            earthTexture.addEventListener('error', () => {
-                console.error('❌ Помилка завантаження текстури earth.jpg');
-            });
+            earthTexture.addEventListener('load', () => { console.log('✅ Текстура earth.jpg успішно завантажена'); });
+            earthTexture.addEventListener('error', () => { console.error('❌ Помилка завантаження текстури earth.jpg'); });
         }
-
         const peaceDoveImg = document.querySelector('#peace-dove-img');
         if (peaceDoveImg) {
-            peaceDoveImg.addEventListener('load', () => {
-                console.log('✅ Текстура голуба успішно завантажена');
-            });
-            peaceDoveImg.addEventListener('error', () => {
-                console.error('❌ Помилка завантаження текстури peace-dove.png — перевір шлях!');
-            });
+            peaceDoveImg.addEventListener('load', () => { console.log('✅ Текстура голуба успішно завантажена'); });
+            peaceDoveImg.addEventListener('error', () => { console.error('❌ Помилка завантаження текстури peace-dove.png'); });
         }
 
-        // Функція для вимірювання ширини тексту
         function getTextWidth(text, font) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -235,21 +226,18 @@
             return context.measureText(text).width + 10;
         }
 
-        // Фрази з правильним порядком слів
-       const phrases = [
+        const phrases = [
             ['Мир', 'Україні', 'Річка', 'Гора'],
             ['Свобода', 'всім', 'Ліс', 'Море'],
             ['Єдність', 'і', 'мир', 'Дерево', 'Сонце'],
-            ['Україна', 'сонце', 'моя', 'Мапа', 'Батьківщина'],
+            ['Україна', '–', 'це', 'Мапа', 'Дім'],
             ['Добро', 'переможе', 'Зло', 'Сміх']
         ];
-
-        // Коректний порядок слів для кожної фрази
         const correctPhraseOrders = [
             ['Мир', 'Україні'],
             ['Свобода', 'всім'],
             ['Єдність', 'і', 'мир'],
-            ['Україна', 'моя', 'Батьківщина'],
+            ['Україна', '–', 'це'],
             ['Добро', 'переможе']
         ];
 
@@ -259,43 +247,33 @@
         let isGameActive = false;
         let currentCompletedPhrase = [];
 
-        // Логіка відстеження маркера
-        if (targetEntity) {
-            targetEntity.addEventListener('targetFound', () => {
-                console.log("🎯 Маркер знайдено! Планета з'явилася.");
-                loader.style.display = 'none';
-                if (planet) {
-                    planet.setAttribute('visible', 'true');
-                }
-                if (bgMusic && bgMusic.paused) {
-                    bgMusic.play().catch(e => console.log("🔇 Помилка відтворення музики:", e));
-                    soundBtn.classList.remove('off');
-                    soundBtn.textContent = 'Вимкнути звук';
-                }
+        targetEntity.addEventListener('targetFound', () => {
+            console.log("🎯 Маркер знайдено! Планета з'явилася.");
+            loader.style.display = 'none';
+            planet.setAttribute('visible', 'true');
+            if (bgMusic.paused) {
+                bgMusic.play().catch(e => console.log("🔇 Помилка відтворення музики:", e));
+                soundBtn.classList.remove('off');
+                soundBtn.textContent = 'Вимкнути звук';
+            }
+            if (!isGameActive) {
                 playBtn.style.display = 'block';
-            });
+            }
+        });
 
-            targetEntity.addEventListener('targetLost', () => {
-                console.log("ℹ️ Маркер втрачено.");
-                if (planet) {
-                    planet.setAttribute('visible', 'false');
-                }
-                if (peaceDove) peaceDove.setAttribute('visible', 'false');
-                if (bgMusic && !bgMusic.paused) bgMusic.pause();
-                canvas.style.display = 'none';
-                playBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-                restartBtn.style.display = 'none';
-                loader.style.display = 'flex';
-                loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
-                loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
-                isGameActive = false;
-            });
-        } else {
-            console.error('Елемент mindar-image-target не знайдено!');
-        }
+        targetEntity.addEventListener('targetLost', () => {
+            console.log("ℹ️ Маркер втрачено.");
+            planet.setAttribute('visible', 'false');
+            bgMusic.pause();
+            canvas.style.display = 'none';
+            playBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            exitBtn.style.display = 'none';
+            loader.style.display = 'flex';
+            loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
+            loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
+        });
 
-        // Обробка кнопки звуку
         soundBtn.addEventListener('click', () => {
             if (bgMusic.paused) {
                 bgMusic.play().catch(e => console.log("🔇 Помилка відтворення музики:", e));
@@ -308,7 +286,6 @@
             }
         });
 
-        // Випадкове розміщення слів
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -317,7 +294,6 @@
             return array;
         }
 
-        // Завантаження нової фрази
         function loadPhrase(index) {
             const phraseWords = phrases[index];
             const shuffledWords = shuffle([...phraseWords]);
@@ -336,7 +312,6 @@
             drawWords();
         }
 
-        // Позиціонування слів на канвасі
         function positionWordsRandomly() {
             const padding = 20;
             const horizontalMargin = 30;
@@ -355,20 +330,17 @@
             });
         }
 
-        // Малювання слів на canvas
         function drawWords() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = 'bold 20px Comic Neue';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
 
-            // 🧒 Підказка для дитини — заголовок
             ctx.fillStyle = '#FF4500';
             ctx.font = 'bold 22px Comic Neue';
             ctx.textAlign = 'center';
             ctx.fillText('🎯 Склади фразу!', canvas.width / 2, 30);
 
-            // Малювання контейнера
             const containerWidth = canvas.width - 60;
             const containerHeight = 50;
             const containerX = (canvas.width - containerWidth) / 2;
@@ -378,7 +350,6 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(containerX, containerY, containerWidth, containerHeight);
 
-            // Малювання слів, що вже в контейнері
             let placedX = containerX + 10;
             currentCompletedPhrase.forEach(wordText => {
                 const wordWidth = getTextWidth(wordText, 'bold 20px Comic Neue');
@@ -387,7 +358,6 @@
                 placedX += wordWidth + 10;
             });
 
-            // Малювання слів для перетягування
             words.forEach(word => {
                 if (!word.placed) {
                     ctx.fillStyle = '#FF4500';
@@ -400,27 +370,21 @@
                 }
             });
 
-            // Підказка — яку фразу треба скласти
             const targetPhrase = correctPhraseOrders[currentPhraseIndex].join(' ');
             ctx.fillStyle = '#0057B7';
             ctx.fillText(`👉 ${targetPhrase}`, canvas.width / 2, canvas.height - 15);
         }
 
-        // Початок гри
         function startWordGame() {
             isGameActive = true;
             canvas.style.display = 'block';
             playBtn.style.display = 'none';
-            restartBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            exitBtn.style.display = 'block';
+            peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба на час гри
             currentPhraseIndex = 0;
             loadPhrase(currentPhraseIndex);
 
-            canvas.removeEventListener('mousedown', handleMouseDown);
-            canvas.removeEventListener('mousemove', handleMouseMove);
-            canvas.removeEventListener('mouseup', handleMouseUp);
-            canvas.removeEventListener('touchstart', handleTouchStart);
-            canvas.removeEventListener('touchmove', handleTouchMove);
-            canvas.removeEventListener('touchend', handleMouseUp);
             canvas.addEventListener('mousedown', handleMouseDown);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('mouseup', handleMouseUp);
@@ -429,7 +393,15 @@
             canvas.addEventListener('touchend', handleMouseUp);
         }
 
-        // Обробка координат
+        function exitGame() {
+            isGameActive = false;
+            canvas.style.display = 'none';
+            playBtn.style.display = 'block';
+            nextBtn.style.display = 'none';
+            exitBtn.style.display = 'none';
+            peaceDove.setAttribute('visible', 'true'); // Показуємо голуба після виходу
+        }
+
         function getCanvasCoords(e, isTouch = false) {
             const rect = canvas.getBoundingClientRect();
             const x = isTouch ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
@@ -477,24 +449,18 @@
                 const containerY = canvas.height - 80;
                 const containerHeight = 50;
 
-                // Перевірка, чи курсор у зоні контейнера
                 if (selectedWord.y > containerY && selectedWord.y < containerY + containerHeight) {
                     const nextWord = correctPhraseOrders[currentPhraseIndex][currentCompletedPhrase.length];
                     if (selectedWord.text === nextWord) {
                         currentCompletedPhrase.push(selectedWord.text);
-                        // Оновлюємо масив слів, щоб видалити розміщене
                         words = words.filter(w => w !== selectedWord);
                         selectedWord = null;
-
-                        // Перевірка умови перемоги після успішного розміщення
                         checkWinCondition();
                     } else {
-                        // Якщо слово неправильне, повертаємо його на початкову позицію
                         selectedWord = null;
                         positionWordsRandomly();
                     }
                 } else {
-                    // Якщо слово відпустили поза контейнером, повертаємо його на початкову позицію
                     selectedWord = null;
                     positionWordsRandomly();
                 }
@@ -507,45 +473,39 @@
             if (currentCompletedPhrase.join(' ') === targetPhrase.join(' ')) {
                 isGameActive = false;
                 if (successSound) successSound.play();
-                if (peaceDove) {
-                    peaceDove.setAttribute('visible', 'true');
-                }
+                peaceDove.setAttribute('visible', 'true'); // Показуємо голуба при перемозі
 
                 setTimeout(() => {
                     canvas.style.display = 'none';
                     if (currentPhraseIndex < phrases.length - 1) {
                         nextBtn.style.display = 'block';
+                        exitBtn.style.display = 'block';
                     } else {
-                        console.log('🎉 Гра завершена! Залишаємося в AR-сцені.');
+                        console.log('🎉 Гра завершена! Вітаємо!');
                         nextBtn.style.display = 'none';
-                        restartBtn.style.display = 'block';
+                        exitBtn.style.display = 'none';
+                        playBtn.style.display = 'block';
                     }
                 }, 3000);
             }
         }
 
-        // Обробка кнопок
-        playBtn.addEventListener('click', startWordGame);
-
-        nextBtn.addEventListener('click', () => {
-            currentPhraseIndex++;
-            if (currentPhraseIndex < phrases.length) {
-                loadPhrase(currentPhraseIndex);
-                nextBtn.style.display = 'none';
-                if (peaceDove) peaceDove.setAttribute('visible', 'false');
-                isGameActive = true;
-            } else {
-                nextBtn.style.display = 'none';
-                restartBtn.style.display = 'block';
-            }
-        });
-
-        restartBtn.addEventListener('click', () => {
+        playBtn.addEventListener('click', () => {
             currentPhraseIndex = 0;
             startWordGame();
         });
 
-        // Компонент для обробки сенсорних жестів
+        nextBtn.addEventListener('click', () => {
+            currentPhraseIndex++;
+            loadPhrase(currentPhraseIndex);
+            nextBtn.style.display = 'none';
+            isGameActive = true;
+            canvas.style.display = 'block';
+            peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба на новому рівні
+        });
+
+        exitBtn.addEventListener('click', exitGame);
+
         AFRAME.registerComponent('touch-gestures', {
             schema: {
                 minScale: { type: 'number', default: 0.2 },
@@ -559,6 +519,7 @@
                 this.currentScale = 1;
                 this.planet = document.querySelector('#hand-planet');
                 this.el.addEventListener('touchstart', (e) => {
+                    if (isGameActive) return;
                     e.preventDefault();
                     if (e.touches.length === 1) {
                         this.isRotating = true;
@@ -575,6 +536,7 @@
                 });
 
                 this.el.addEventListener('touchmove', (e) => {
+                    if (isGameActive) return;
                     e.preventDefault();
                     if (this.isPinching && e.touches.length === 2) {
                         const currentDistance = Math.hypot(
