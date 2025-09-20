@@ -67,7 +67,7 @@
             gap: 10px;
         }
 
-        .sound-btn, .youtube-btn, .play-btn {
+        .sound-btn, .youtube-btn, .play-btn, .next-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 15px;
@@ -84,6 +84,8 @@
         .youtube-btn:hover { background-color: #FFB300; }
         .play-btn { background-color: #0057B7; color: white; }
         .play-btn:hover { background-color: #003087; }
+        .next-btn { background-color: #FFD700; color: #0057B7; display: none; }
+        .next-btn:hover { background-color: #FFC300; }
 
         #word-canvas {
             position: absolute;
@@ -103,7 +105,7 @@
         <div style="margin-top: 20px; font-size: 1.2em;">Наведи камеру на маркер! 😊🎨</div>
     </div>
 
-    <canvas id="word-canvas" width="400" height="200"></canvas>
+    <canvas id="word-canvas" width="600" height="300"></canvas>
 
     <a-scene
         mindar-image="imageTargetSrc: ./my-marker.mind;"
@@ -157,6 +159,7 @@
     <div class="controls">
         <button id="sound-btn" class="sound-btn">Увімкнути звук</button>
         <button id="play-btn" class="play-btn">Грати</button>
+        <button id="next-btn" class="next-btn">Наступне</button>
         <a href="https://www.youtube.com/playlist?list=PL6UDFwT9TzFw5K8Tzu_OgsDz7vV3N9eY-" target="_blank" class="youtube-btn">YouTube SmartLessa</a>
     </div>
 
@@ -175,6 +178,7 @@
         const bgMusic = document.querySelector('#bg-music');
         const soundBtn = document.querySelector('#sound-btn');
         const playBtn = document.querySelector('#play-btn');
+        const nextBtn = document.querySelector('#next-btn');
         const peaceDove = document.querySelector('#peace-dove');
         const successSound = document.querySelector('#success-sound');
         const canvas = document.querySelector('#word-canvas');
@@ -218,6 +222,7 @@
                 if (bgMusic && !bgMusic.paused) bgMusic.pause();
                 canvas.style.display = 'none';
                 playBtn.style.display = 'none'; // Ховаємо кнопку "Грати"
+                nextBtn.style.display = 'none'; // Ховаємо кнопку "Наступне"
                 loader.style.display = 'flex';
                 loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
                 loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
@@ -240,16 +245,56 @@
         });
 
         // Логіка гри з перетягуванням слів
-        const words = [
-            { text: 'Україна', x: 20, y: 30, targetX: 20, targetY: 120, width: 80, height: 30, placed: false },
-            { text: 'прагне', x: 110, y: 30, targetX: 100, targetY: 120, width: 60, height: 30, placed: false },
-            { text: 'миру', x: 180, y: 30, targetX: 160, targetY: 120, width: 50, height: 30, placed: false },
-            { text: 'та', x: 240, y: 30, targetX: 210, targetY: 120, width: 30, height: 30, placed: false },
-            { text: 'свободи', x: 20, y: 70, targetX: 240, targetY: 120, width: 80, height: 30, placed: false },
-            { text: 'для', x: 110, y: 70, targetX: 320, targetY: 120, width: 40, height: 30, placed: false },
-            { text: 'всіх', x: 160, y: 70, targetX: 360, targetY: 120, width: 40, height: 30, placed: false }
+        const phrases = [
+            // Гасло 1: "Мир Україні" (2 слова) + 2 зайвих
+            [
+                { text: 'Україні', width: 80, height: 30, placed: false },
+                { text: 'Мир', width: 50, height: 30, placed: false },
+                { text: 'Річка', width: 60, height: 30, placed: false },
+                { text: 'Гора', width: 50, height: 30, placed: false }
+            ],
+            // Гасло 2: "Свобода всім" (2 слова) + 2 зайвих
+            [
+                { text: 'всім', width: 50, height: 30, placed: false },
+                { text: 'Свобода', width: 80, height: 30, placed: false },
+                { text: 'Ліс', width: 40, height: 30, placed: false },
+                { text: 'Море', width: 60, height: 30, placed: false }
+            ],
+            // Гасло 3: "Єдність і мир" (3 слова) + 2 зайвих
+            [
+                { text: 'мир', width: 50, height: 30, placed: false },
+                { text: 'і', width: 20, height: 30, placed: false },
+                { text: 'Єдність', width: 70, height: 30, placed: false },
+                { text: 'Дерево', width: 70, height: 30, placed: false },
+                { text: 'Сонце', width: 60, height: 30, placed: false }
+            ]
         ];
+        let currentPhraseIndex = 0;
+        let words = [];
         let selectedWord = null;
+
+        function getRandomPosition(maxX, maxY) {
+            return {
+                x: Math.random() * (maxX - 100) + 20,
+                y: Math.random() * (maxY / 2 - 50) + 30
+            };
+        }
+
+        function loadPhrase(index) {
+            const phrase = phrases[index];
+            let targetX = 20;
+            words = phrase.map(word => {
+                const pos = getRandomPosition(canvas.width, canvas.height);
+                const target = { targetX: word.placed ? targetX : pos.x, targetY: canvas.height - 50 };
+                if (phrase.indexOf(word) < phrase.length - 2) { // Останні два слова - зайві, не мають цільових позицій
+                    targetX += word.width + 10;
+                }
+                return { ...word, x: pos.x, y: pos.y, targetX: target.targetX, targetY: target.targetY };
+            });
+            // Перемішуємо слова для розкидання не за порядком
+            words.sort(() => Math.random() - 0.5);
+            drawWords();
+        }
 
         function drawWords() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -257,23 +302,29 @@
             words.forEach(word => {
                 ctx.fillStyle = word.placed ? '#0057B7' : '#FF4500';
                 ctx.fillText(word.text, word.x, word.y);
-                if (!word.placed) {
+                if (!word.placed && words.indexOf(word) < words.length - 2) { // Тільки для основних слів малюємо цільові зони
                     ctx.strokeStyle = '#FFD700';
                     ctx.strokeRect(word.targetX, word.targetY - 20, word.width, word.height);
                 }
             });
-            if (words.every(word => word.placed)) {
+            if (words.every(word => word.placed || words.indexOf(word) >= words.length - 2)) {
+                const fullPhrase = words.slice(0, -2).map(word => word.text).join(' ');
                 ctx.fillStyle = '#0057B7';
-                ctx.fillText('Україна прагне миру та свободи! 💙💛', canvas.width / 2 - 180, canvas.height / 2);
+                ctx.fillText(fullPhrase + ' 💙💛', canvas.width / 2 - 180, canvas.height / 2);
                 if (successSound) successSound.play();
                 if (peaceDove) peaceDove.setAttribute('visible', 'true');
+                if (currentPhraseIndex < phrases.length - 1) {
+                    nextBtn.style.display = 'block';
+                } else {
+                    ctx.fillText('Гра завершена! 😊', canvas.width / 2 - 100, canvas.height / 2 + 30);
+                }
             }
         }
 
         function startWordGame() {
-            words.forEach(word => word.placed = false); // Скидаємо стан гри
+            currentPhraseIndex = 0;
+            loadPhrase(currentPhraseIndex);
             canvas.style.display = 'block';
-            drawWords();
             canvas.addEventListener('mousedown', handleMouseDown);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('mouseup', handleMouseUp);
@@ -287,7 +338,7 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             words.forEach(word => {
-                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && words.indexOf(word) < words.length - 2 && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
                     selectedWord = word;
                 }
             });
@@ -299,7 +350,7 @@
             const x = e.touches[0].clientX - rect.left;
             const y = e.touches[0].clientY - rect.top;
             words.forEach(word => {
-                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && words.indexOf(word) < words.length - 2 && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
                     selectedWord = word;
                 }
             });
@@ -345,6 +396,14 @@
         // Обробка кнопки "Грати"
         playBtn.addEventListener('click', () => {
             startWordGame();
+        });
+
+        // Обробка кнопки "Наступне"
+        nextBtn.addEventListener('click', () => {
+            currentPhraseIndex++;
+            loadPhrase(currentPhraseIndex);
+            nextBtn.style.display = 'none';
+            if (peaceDove) peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба для наступного завдання
         });
 
         // Компонент для обробки сенсорних жестів
