@@ -74,7 +74,7 @@
             gap: 10px;
         }
 
-        .sound-btn, .youtube-btn, .play-btn, .next-btn {
+        .sound-btn, .youtube-btn, .play-btn, .next-btn, .restart-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 15px;
@@ -90,8 +90,8 @@
         .sound-btn.off { background-color: #f44336; }
         .youtube-btn { background-color: #FF9800; color: white; }
         .youtube-btn:hover { background-color: #FFB300; }
-        .play-btn { background-color: #0057B7; color: white; }
-        .play-btn:hover { background-color: #003087; }
+        .play-btn, .restart-btn { background-color: #0057B7; color: white; }
+        .play-btn:hover, .restart-btn:hover { background-color: #003087; }
         .next-btn { background-color: #FFD700; color: #0057B7; display: none; }
         .next-btn:hover { background-color: #FFC300; }
 
@@ -171,6 +171,7 @@
         <button id="sound-btn" class="sound-btn">Увімкнути звук</button>
         <button id="play-btn" class="play-btn">Грати</button>
         <button id="next-btn" class="next-btn">Наступне</button>
+        <button id="restart-btn" class="restart-btn" style="display: none;">Почати знову</button>
         <a href="https://www.youtube.com/playlist?list=PL6UDFwT9TzFw5K8Tzu_OgsDz7vV3N9eY-" target="_blank" class="youtube-btn">YouTube SmartLessa</a>
     </div>
 
@@ -199,6 +200,7 @@
         const soundBtn = document.querySelector('#sound-btn');
         const playBtn = document.querySelector('#play-btn');
         const nextBtn = document.querySelector('#next-btn');
+        const restartBtn = document.querySelector('#restart-btn');
         const peaceDove = document.querySelector('#peace-dove-entity');
         const successSound = document.querySelector('#success-sound');
         const canvas = document.querySelector('#word-canvas');
@@ -237,14 +239,18 @@
         const phrases = [
             ['Мир', 'Україні', 'Річка', 'Гора'],
             ['Свобода', 'всім', 'Ліс', 'Море'],
-            ['Єдність', 'і', 'мир', 'Дерево', 'Сонце']
+            ['Єдність', 'і', 'мир', 'Дерево', 'Сонце'],
+            ['Україна', 'сонце', 'моя', 'Мапа', 'Батьківщина'],
+            ['Добро', 'переможе', 'Зло', 'Сміх']
         ];
 
         // Коректний порядок слів для кожної фрази
         const correctPhraseOrders = [
             ['Мир', 'Україні'],
             ['Свобода', 'всім'],
-            ['Єдність', 'і', 'мир']
+            ['Єдність', 'і', 'мир'],
+            ['Україна', 'моя', 'Батьківщина'],
+            ['Добро', 'переможе']
         ];
 
         let currentPhraseIndex = 0;
@@ -279,6 +285,7 @@
                 canvas.style.display = 'none';
                 playBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
+                restartBtn.style.display = 'none';
                 loader.style.display = 'flex';
                 loader.querySelector('.pulse').textContent = '🌍 Світ на долоні 🎈';
                 loader.querySelector('div[style]').textContent = 'Наведи камеру на маркер! 😊🎨';
@@ -404,6 +411,7 @@
             isGameActive = true;
             canvas.style.display = 'block';
             playBtn.style.display = 'none';
+            restartBtn.style.display = 'none';
             currentPhraseIndex = 0;
             loadPhrase(currentPhraseIndex);
 
@@ -468,23 +476,28 @@
             if (selectedWord) {
                 const containerY = canvas.height - 80;
                 const containerHeight = 50;
-
+                
+                // Перевірка, чи курсор у зоні контейнера
                 if (selectedWord.y > containerY && selectedWord.y < containerY + containerHeight) {
                     const nextWord = correctPhraseOrders[currentPhraseIndex][currentCompletedPhrase.length];
                     if (selectedWord.text === nextWord) {
                         currentCompletedPhrase.push(selectedWord.text);
-                        selectedWord.placed = true;
-                        words = words.filter(w => w !== selectedWord);
+                        // Оновлюємо масив слів, щоб видалити розміщене
+                        words = words.filter(w => w.text !== selectedWord.text);
+                        selectedWord = null;
+                        
+                        // Перевірка умови перемоги після успішного розміщення
                         checkWinCondition();
                     } else {
-                        // Повертаємо слово на початкову позицію з анімацією або візуальним ефектом
-                        // Тут можна додати логіку для "помилки"
-                        // Для простоти, повертаємо на випадкову позицію
+                        // Якщо слово неправильне, повертаємо його на випадкову позицію
+                        selectedWord = null;
                         positionWordsRandomly();
-                        drawWords();
                     }
+                } else {
+                    // Якщо слово відпустили поза контейнером, повертаємо його на випадкову позицію
+                    selectedWord = null;
+                    positionWordsRandomly();
                 }
-                selectedWord = null;
                 drawWords();
             }
         }
@@ -504,6 +517,8 @@
                         nextBtn.style.display = 'block';
                     } else {
                         console.log('🎉 Гра завершена! Залишаємося в AR-сцені.');
+                        nextBtn.style.display = 'none';
+                        restartBtn.style.display = 'block';
                     }
                 }, 3000);
             }
@@ -521,7 +536,13 @@
                 isGameActive = true;
             } else {
                 nextBtn.style.display = 'none';
+                restartBtn.style.display = 'block';
             }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            currentPhraseIndex = 0;
+            startWordGame();
         });
 
         // Компонент для обробки сенсорних жестів
