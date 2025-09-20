@@ -105,7 +105,7 @@
         <div style="margin-top: 20px; font-size: 1.2em;">Наведи камеру на маркер! 😊🎨</div>
     </div>
 
-    <canvas id="word-canvas" width="600" height="300"></canvas>
+    <canvas id="word-canvas" width="800" height="400"></canvas>
 
     <a-scene
         mindar-image="imageTargetSrc: ./my-marker.mind;"
@@ -275,7 +275,7 @@
 
         function getRandomPosition(maxX, maxY) {
             return {
-                x: Math.random() * (maxX - 100) + 20,
+                x: Math.random() * (maxX - 150) + 20,
                 y: Math.random() * (maxY / 2 - 50) + 30
             };
         }
@@ -287,7 +287,7 @@
                 const pos = getRandomPosition(canvas.width, canvas.height);
                 const target = { targetX: word.placed ? targetX : pos.x, targetY: canvas.height - 50 };
                 if (phrase.indexOf(word) < phrase.length - 2) { // Останні два слова - зайві, не мають цільових позицій
-                    targetX += word.width + 10;
+                    targetX += word.width + 20; // Більша відстань між цільовими позиціями
                 }
                 return { ...word, x: pos.x, y: pos.y, targetX: target.targetX, targetY: target.targetY };
             });
@@ -338,7 +338,7 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             words.forEach(word => {
-                if (!word.placed && words.indexOf(word) < words.length - 2 && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
                     selectedWord = word;
                 }
             });
@@ -350,7 +350,7 @@
             const x = e.touches[0].clientX - rect.left;
             const y = e.touches[0].clientY - rect.top;
             words.forEach(word => {
-                if (!word.placed && words.indexOf(word) < words.length - 2 && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
+                if (!word.placed && x > word.x && x < word.x + word.width && y > word.y - 20 && y < word.y + 10) {
                     selectedWord = word;
                 }
             });
@@ -383,10 +383,14 @@
             if (selectedWord) {
                 const dx = selectedWord.x - selectedWord.targetX;
                 const dy = selectedWord.y - selectedWord.targetY;
-                if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+                if (selectedWord.targetX && Math.abs(dx) < 20 && Math.abs(dy) < 20) { // Перетягування тільки для слів із цільовими позиціями
                     selectedWord.x = selectedWord.targetX;
                     selectedWord.y = selectedWord.targetY;
                     selectedWord.placed = true;
+                } else if (!selectedWord.targetX) { // Зайві слова повертаються на випадкову позицію
+                    const pos = getRandomPosition(canvas.width, canvas.height);
+                    selectedWord.x = pos.x;
+                    selectedWord.y = pos.y;
                 }
                 selectedWord = null;
                 drawWords();
