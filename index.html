@@ -317,7 +317,7 @@
         function positionWordsRandomly() {
             const padding = 20;
             const horizontalMargin = 30;
-            const verticalMargin = 10;
+            const verticalMargin = 20; // Збільшено відступ між рядками
             let currentX = horizontalMargin;
             let currentY = 50;
 
@@ -347,7 +347,6 @@
             const containerHeight = 50;
             const containerX = (canvas.width - containerWidth) / 2;
             const containerY = canvas.height - 80;
-
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 2;
             ctx.strokeRect(containerX, containerY, containerWidth, containerHeight);
@@ -371,10 +370,6 @@
                     ctx.shadowColor = 'transparent';
                 }
             });
-
-            const targetPhrase = correctPhraseOrders[currentPhraseIndex].join(' ');
-            ctx.fillStyle = '#0057B7';
-            ctx.fillText(`👉 ${targetPhrase}`, canvas.width / 2, canvas.height - 15);
         }
 
         function startWordGame() {
@@ -383,7 +378,7 @@
             playBtn.style.display = 'none';
             nextBtn.style.display = 'none';
             exitBtn.style.display = 'block';
-            peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба на час гри
+            peaceDove.setAttribute('visible', 'false');
             currentPhraseIndex = 0;
             loadPhrase(currentPhraseIndex);
 
@@ -401,7 +396,7 @@
             playBtn.style.display = 'block';
             nextBtn.style.display = 'none';
             exitBtn.style.display = 'none';
-            peaceDove.setAttribute('visible', 'true'); // Показуємо голуба після виходу
+            peaceDove.setAttribute('visible', 'true');
         }
 
         function getCanvasCoords(e, isTouch = false) {
@@ -475,7 +470,7 @@
             if (currentCompletedPhrase.join(' ') === targetPhrase.join(' ')) {
                 isGameActive = false;
                 if (successSound) successSound.play();
-                peaceDove.setAttribute('visible', 'true'); // Показуємо голуба при перемозі
+                peaceDove.setAttribute('visible', 'true');
 
                 setTimeout(() => {
                     canvas.style.display = 'none';
@@ -503,7 +498,7 @@
             nextBtn.style.display = 'none';
             isGameActive = true;
             canvas.style.display = 'block';
-            peaceDove.setAttribute('visible', 'false'); // Ховаємо голуба на новому рівні
+            peaceDove.setAttribute('visible', 'false');
         });
 
         exitBtn.addEventListener('click', exitGame);
@@ -564,4 +559,3 @@
     </script>
 </body>
 </html>
-
