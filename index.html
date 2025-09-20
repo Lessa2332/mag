@@ -236,7 +236,7 @@
         }
 
         // Фрази з правильним порядком слів
-        const phrases = [
+       const phrases = [
             ['Мир', 'Україні', 'Річка', 'Гора'],
             ['Свобода', 'всім', 'Ліс', 'Море'],
             ['Єдність', 'і', 'мир', 'Дерево', 'Сонце'],
@@ -476,25 +476,25 @@
             if (selectedWord) {
                 const containerY = canvas.height - 80;
                 const containerHeight = 50;
-                
+
                 // Перевірка, чи курсор у зоні контейнера
                 if (selectedWord.y > containerY && selectedWord.y < containerY + containerHeight) {
                     const nextWord = correctPhraseOrders[currentPhraseIndex][currentCompletedPhrase.length];
                     if (selectedWord.text === nextWord) {
                         currentCompletedPhrase.push(selectedWord.text);
                         // Оновлюємо масив слів, щоб видалити розміщене
-                        words = words.filter(w => w.text !== selectedWord.text);
+                        words = words.filter(w => w !== selectedWord);
                         selectedWord = null;
-                        
+
                         // Перевірка умови перемоги після успішного розміщення
                         checkWinCondition();
                     } else {
-                        // Якщо слово неправильне, повертаємо його на випадкову позицію
+                        // Якщо слово неправильне, повертаємо його на початкову позицію
                         selectedWord = null;
                         positionWordsRandomly();
                     }
                 } else {
-                    // Якщо слово відпустили поза контейнером, повертаємо його на випадкову позицію
+                    // Якщо слово відпустили поза контейнером, повертаємо його на початкову позицію
                     selectedWord = null;
                     positionWordsRandomly();
                 }
@@ -510,7 +510,7 @@
                 if (peaceDove) {
                     peaceDove.setAttribute('visible', 'true');
                 }
-                
+
                 setTimeout(() => {
                     canvas.style.display = 'none';
                     if (currentPhraseIndex < phrases.length - 1) {
